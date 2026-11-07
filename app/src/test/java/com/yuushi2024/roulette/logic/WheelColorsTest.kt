@@ -134,7 +134,7 @@ class WheelColorsTest {
                 }
                 assertTrue(
                     "label for $background contrasts $chosen but the other is better",
-                    chosen >= minOf(dark, light),
+                    chosen >= maxOf(dark, light),
                 )
             }
         }
