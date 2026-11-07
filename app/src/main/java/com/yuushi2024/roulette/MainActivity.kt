@@ -1,5 +1,6 @@
 package com.yuushi2024.roulette
 
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
@@ -9,6 +10,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -16,6 +21,7 @@ import com.yuushi2024.roulette.data.PreferencesStore
 import com.yuushi2024.roulette.logic.SpinMath
 import com.yuushi2024.roulette.logic.TextEditing
 import com.yuushi2024.roulette.logic.WheelFactory
+import com.yuushi2024.roulette.logic.WheelLayout
 import com.yuushi2024.roulette.ui.RouletteView
 import com.yuushi2024.roulette.ui.RouletteViewModel
 
@@ -23,6 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: RouletteViewModel by viewModels()
 
+    private lateinit var rootLayout: ConstraintLayout
     private lateinit var rouletteView: RouletteView
     private lateinit var entriesInput: TextInputEditText
     private lateinit var resultText: TextView
@@ -39,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        rootLayout = findViewById(R.id.rootLayout)
         rouletteView = findViewById(R.id.rouletteView)
         entriesInput = findViewById(R.id.entriesInput)
         resultText = findViewById(R.id.resultText)
@@ -87,6 +95,18 @@ class MainActivity : AppCompatActivity() {
             setSpinning(false)
         }
 
+        // Shrink the wheel while the soft keyboard is open, so the input box keeps
+        // a usable height instead of being squeezed to nothing.
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { _, insets ->
+            val imeVisible = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                insets.isVisible(WindowInsetsCompat.Type.ime())
+            } else {
+                insets.systemWindowInsetBottom > 0
+            }
+            applyWheelHeight(imeVisible)
+            insets
+        }
+
         spinButton.setOnClickListener { startSpin() }
         clearButton.setOnClickListener { confirmClear() }
         addLineButton.setOnClickListener { addLine() }
@@ -118,6 +138,17 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         viewModel.rebuild(entriesInput.text?.toString().orEmpty())
+    }
+
+    /** Applies the wheel height that suits the current keyboard state. */
+    private fun applyWheelHeight(imeVisible: Boolean) {
+        val set = ConstraintSet()
+        set.clone(rootLayout)
+        set.constrainPercentHeight(
+            R.id.rouletteView,
+            WheelLayout.wheelHeightPercent(imeVisible),
+        )
+        set.applyTo(rootLayout)
     }
 
     /** Starts a spin unless one is already running or the wheel is empty. */

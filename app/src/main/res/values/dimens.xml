@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The input box keeps at least this much height even when the soft
+         keyboard is open, so several entries stay visible while typing. -->
+    <dimen name="input_min_height">96dp</dimen>
+</resources>

@@ -8,6 +8,7 @@ class WheelColorsTest {
 
     private fun alpha(color: Int) = (color ushr 24) and 0xFF
 
+    /** HSV conversion matches the primaries. */
     @Test
     fun `hsv conversion matches primary colours`() {
         assertEquals(0xFFFF0000.toInt(), WheelColors.hsvToArgb(0f, 1f, 1f))
@@ -17,6 +18,7 @@ class WheelColorsTest {
         assertEquals(0xFF000000.toInt(), WheelColors.hsvToArgb(0f, 0f, 0f))
     }
 
+    /** No colour is see-through. */
     @Test
     fun `every item colour is fully opaque`() {
         for (source in 0 until 20) {
@@ -24,6 +26,7 @@ class WheelColorsTest {
         }
     }
 
+    /** One entry, one colour. */
     @Test
     fun `an item keeps one colour whatever its sectors do`() {
         // The user asked for one colour per entry, not a gradient per copy.
@@ -31,12 +34,14 @@ class WheelColorsTest {
         assertEquals(colour, WheelColors.itemColor(3))
     }
 
+    /** Two entries never share a colour. */
     @Test
     fun `each item gets its own colour`() {
         val colours = (0 until 12).map { WheelColors.itemColor(it) }
         assertEquals("items should not share a colour", 12, colours.toSet().size)
     }
 
+    /** Small lists stay easy to tell apart. */
     @Test
     fun `neighbouring items get clearly different hues`() {
         // Two or three entries are the case that used to look monotonous, so the
@@ -52,6 +57,7 @@ class WheelColorsTest {
         }
     }
 
+    /** Hues stay in 0..360. */
     @Test
     fun `base hue stays inside the colour wheel`() {
         for (source in 0 until 50) {
@@ -60,12 +66,14 @@ class WheelColorsTest {
         }
     }
 
+    /** Three entries give three colours. */
     @Test
     fun `three items produce three distinct colours`() {
         val colours = (0 until 3).map { WheelColors.itemColor(it) }
         assertEquals(3, colours.toSet().size)
     }
 
+    /** Light and dark wedges both stay readable. */
     @Test
     fun `label colour contrasts with its background`() {
         assertEquals(WheelColors.DARK_TEXT, WheelColors.labelColorFor(0xFFFFFFFF.toInt()))
@@ -74,6 +82,7 @@ class WheelColorsTest {
         assertEquals(WheelColors.LIGHT_TEXT, WheelColors.labelColorFor(0xFF0D47A1.toInt()))
     }
 
+    /** The better of black and white wins. */
     @Test
     fun `label colour is the candidate with the higher contrast ratio`() {
         // Regression: a plain brightness threshold used to pick white for
@@ -103,6 +112,7 @@ class WheelColorsTest {
         }
     }
 
+    /** The palette keeps a usable contrast floor. */
     @Test
     fun `generated item colours stay legible`() {
         // The palette is deliberately vivid, so a few saturated mid-tones cannot
