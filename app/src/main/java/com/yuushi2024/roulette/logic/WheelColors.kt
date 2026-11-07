@@ -92,9 +92,11 @@ object WheelColors {
         return argb(rgb.first + m, rgb.second + m, rgb.third + m)
     }
 
+    /** Packs three 0..1 channels into a fully opaque ARGB colour. */
     private fun argb(r: Float, g: Float, b: Float): Int =
         (0xFF shl 24) or (channel(r) shl 16) or (channel(g) shl 8) or channel(b)
 
+    /** Converts one 0..1 channel to a clamped 0..255 byte. */
     private fun channel(value: Float): Int =
         (value * 255f).roundToInt().coerceIn(0, 255)
 

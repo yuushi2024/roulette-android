@@ -71,12 +71,14 @@ class RouletteView @JvmOverloads constructor(
         spinListener = listener
     }
 
+    /** Replaces the wheel contents and rebuilds the sector colours. */
     fun setSectors(newSectors: List<RouletteSector>) {
         sectors = newSectors
         colors = buildColors(newSectors)
         invalidate()
     }
 
+    /** True while a spin animation is running. */
     fun isSpinning(): Boolean = animator?.isRunning == true
 
     /**
@@ -116,6 +118,7 @@ class RouletteView @JvmOverloads constructor(
         animator.start()
     }
 
+    /** Stops the animation so a detached view cannot leak its listener. */
     override fun onDetachedFromWindow() {
         animator?.cancel()
         animator = null
@@ -147,6 +150,7 @@ class RouletteView @JvmOverloads constructor(
         drawPointer(canvas, cx, cy, radius)
     }
 
+    /** Draws every sector label, picking a readable colour per wedge. */
     private fun drawLabels(canvas: Canvas, cx: Float, cy: Float, radius: Float, textSize: Float) {
         if (sectors.size > 40) return
         val textRadius = radius * 0.66f
@@ -164,12 +168,14 @@ class RouletteView @JvmOverloads constructor(
         }
     }
 
+    /** Draws the centre hub and its ring. */
     private fun drawHub(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
         val hubRadius = radius * 0.16f
         canvas.drawCircle(cx, cy, hubRadius, hubPaint)
         canvas.drawCircle(cx, cy, hubRadius, hubRingPaint)
     }
 
+    /** Draws the fixed pointer at the top of the wheel. */
     private fun drawPointer(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
         val tipLength = radius * 0.30f
         val halfWidth = radius * 0.09f
@@ -181,6 +187,7 @@ class RouletteView @JvmOverloads constructor(
         canvas.drawPath(pointerPath, pointerPaint)
     }
 
+    /** Assigns a colour to every sector, shading the copies of one entry. */
     private fun buildColors(items: List<RouletteSector>): IntArray {
         // Copies of one entry share a hue; their order among the copies sets how
         // light or dark that copy is, so the wheel shows a smooth gradient per

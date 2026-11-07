@@ -110,6 +110,7 @@ class MainActivity : AppCompatActivity() {
         viewModel.rebuild(entriesInput.text?.toString().orEmpty())
     }
 
+    /** Starts a spin unless one is already running or the wheel is empty. */
     private fun startSpin() {
         if (rouletteView.isSpinning()) return
         if (viewModel.sectors.value.isNullOrEmpty()) {
@@ -121,11 +122,13 @@ class MainActivity : AppCompatActivity() {
         rouletteView.spinTo(rotation, SPIN_DURATION_MS)
     }
 
+    /** Reflects the spinning state in the start button. */
     private fun setSpinning(spinning: Boolean) {
         spinButton.isEnabled = !spinning && !viewModel.sectors.value.isNullOrEmpty()
         spinButton.text = if (spinning) getString(R.string.spinning) else getString(R.string.spin)
     }
 
+    /** Asks for confirmation, then clears the input and the wheel. */
     private fun confirmClear() {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.clear_confirm_title)
