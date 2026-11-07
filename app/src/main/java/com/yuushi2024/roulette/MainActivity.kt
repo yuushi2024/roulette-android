@@ -2,7 +2,9 @@ package com.yuushi2024.roulette
 
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
+import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -30,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private var rotation = 0f
     private var restoring = false
 
+    /** Wires the widgets, restores the saved input and rebuilds the wheel. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -53,9 +56,23 @@ class MainActivity : AppCompatActivity() {
         restoring = false
         viewModel.rebuild(savedText)
 
+        // TextInputEditText turns the Enter key into an IME action while it is
+        // showing a hint, which blocks newlines even with textMultiLine set.
+        // Restore the multi-line input type explicitly so Enter always inserts
+        // a line break.
+        entriesInput.inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        entriesInput.imeOptions =
+            EditorInfo.IME_ACTION_NONE or EditorInfo.IME_FLAG_NO_ENTER_ACTION
+
         entriesInput.addTextChangedListener(object : TextWatcher {
+            /** No-op: the wheel is rebuilt in [afterTextChanged] instead. */
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            /** No-op: the wheel is rebuilt in [afterTextChanged] instead. */
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            /** Rebuilds the wheel whenever the user edits the input. */
             override fun afterTextChanged(s: Editable?) {
                 if (restoring) return
                 viewModel.rebuild(s?.toString().orEmpty())
@@ -87,16 +104,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Keeps the input across configuration changes. */
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_TEXT, entriesInput.text?.toString().orEmpty())
     }
 
+    /** Persists the input so it survives leaving the app. */
     override fun onPause() {
         super.onPause()
         viewModel.rebuild(entriesInput.text?.toString().orEmpty())
     }
 
+    /** Starts a spin unless one is already running or the wheel is empty. */
     private fun startSpin() {
         if (rouletteView.isSpinning()) return
         if (viewModel.sectors.value.isNullOrEmpty()) {
@@ -108,11 +128,13 @@ class MainActivity : AppCompatActivity() {
         rouletteView.spinTo(rotation, SPIN_DURATION_MS)
     }
 
+    /** Reflects the spinning state in the start button. */
     private fun setSpinning(spinning: Boolean) {
         spinButton.isEnabled = !spinning && !viewModel.sectors.value.isNullOrEmpty()
         spinButton.text = if (spinning) getString(R.string.spinning) else getString(R.string.spin)
     }
 
+    /** Asks for confirmation, then clears the input and the wheel. */
     private fun confirmClear() {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.clear_confirm_title)

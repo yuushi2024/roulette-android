@@ -15,6 +15,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import com.yuushi2024.roulette.logic.RouletteSector
 import com.yuushi2024.roulette.logic.SpinMath
+import com.yuushi2024.roulette.logic.WheelColors
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -41,7 +42,6 @@ class RouletteView @JvmOverloads constructor(
         strokeWidth = 2f
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
         textAlign = Paint.Align.CENTER
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
@@ -71,12 +71,14 @@ class RouletteView @JvmOverloads constructor(
         spinListener = listener
     }
 
+    /** Replaces the wheel contents and rebuilds the sector colours. */
     fun setSectors(newSectors: List<RouletteSector>) {
         sectors = newSectors
         colors = buildColors(newSectors)
         invalidate()
     }
 
+    /** True while a spin animation is running. */
     fun isSpinning(): Boolean = animator?.isRunning == true
 
     /**
@@ -96,10 +98,12 @@ class RouletteView @JvmOverloads constructor(
             addListener(object : AnimatorListenerAdapter() {
                 private var canceled = false
 
+                /** Marks the run as canceled so the end listener stays quiet. */
                 override fun onAnimationCancel(animation: Animator) {
                     canceled = true
                 }
 
+                /** Reports the winning sector, unless the spin was canceled. */
                 override fun onAnimationEnd(animation: Animator) {
                     // onAnimationEnd also fires after cancel(); only report a
                     // winner for a spin that actually reached the target.
@@ -116,12 +120,14 @@ class RouletteView @JvmOverloads constructor(
         animator.start()
     }
 
+    /** Stops the animation so a detached view cannot leak its listener. */
     override fun onDetachedFromWindow() {
         animator?.cancel()
         animator = null
         super.onDetachedFromWindow()
     }
 
+    /** Draws the wedges, labels, hub and pointer at the current rotation. */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (sectors.isEmpty()) return
@@ -147,10 +153,14 @@ class RouletteView @JvmOverloads constructor(
         drawPointer(canvas, cx, cy, radius)
     }
 
+    /** Draws every sector label, picking a readable colour per wedge. */
     private fun drawLabels(canvas: Canvas, cx: Float, cy: Float, radius: Float, textSize: Float) {
         if (sectors.size > 40) return
         val textRadius = radius * 0.66f
-        sectors.forEach { sector ->
+        sectors.forEachIndexed { index, sector ->
+            // Light wedges need dark text and vice versa, so the palette can use
+            // both bright and deep colours without losing the labels.
+            labelPaint.color = WheelColors.labelColorFor(colors[index])
             val angle = Math.toRadians((sector.centerAngle + rotationDegrees).toDouble())
             val x = cx + (textRadius * cos(angle)).toFloat()
             val y = cy + (textRadius * sin(angle)).toFloat()
@@ -161,12 +171,14 @@ class RouletteView @JvmOverloads constructor(
         }
     }
 
+    /** Draws the centre hub and its ring. */
     private fun drawHub(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
         val hubRadius = radius * 0.16f
         canvas.drawCircle(cx, cy, hubRadius, hubPaint)
         canvas.drawCircle(cx, cy, hubRadius, hubRingPaint)
     }
 
+    /** Draws the fixed pointer at the top of the wheel. */
     private fun drawPointer(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
         val tipLength = radius * 0.30f
         val halfWidth = radius * 0.09f
@@ -178,34 +190,17 @@ class RouletteView @JvmOverloads constructor(
         canvas.drawPath(pointerPath, pointerPaint)
     }
 
+    /** Assigns a colour to every sector, shading the copies of one entry. */
     private fun buildColors(items: List<RouletteSector>): IntArray {
-        val palette = PALETTE
-        val distinct = (items.maxOfOrNull { it.sourceIndex } ?: 0) + 1
-        val bySource = IntArray(distinct) { source ->
-            if (source < palette.size) palette[source] else fallbackColor(source)
+        // Copies of one entry share a hue; their order among the copies sets how
+        // light or dark that copy is, so the wheel shows a smooth gradient per
+        // entry rather than a single flat colour.
+        val totals = IntArray((items.maxOfOrNull { it.sourceIndex } ?: 0) + 1)
+        items.forEach { totals[it.sourceIndex]++ }
+        val seen = IntArray(totals.size)
+        return IntArray(items.size) { index ->
+            val source = items[index].sourceIndex
+            WheelColors.sectorColor(source, seen[source]++, totals[source])
         }
-        return IntArray(items.size) { bySource[items[it].sourceIndex] }
-    }
-
-    private fun fallbackColor(index: Int): Int {
-        val hue = (index * 137.508f) % 360f
-        return Color.HSVToColor(floatArrayOf(hue, 0.65f, 0.85f))
-    }
-
-    private companion object {
-        val PALETTE = intArrayOf(
-            Color.parseColor("#E53935"),
-            Color.parseColor("#1E88E5"),
-            Color.parseColor("#43A047"),
-            Color.parseColor("#FB8C00"),
-            Color.parseColor("#8E24AA"),
-            Color.parseColor("#00ACC1"),
-            Color.parseColor("#FDD835"),
-            Color.parseColor("#D81B60"),
-            Color.parseColor("#3949AB"),
-            Color.parseColor("#00897B"),
-            Color.parseColor("#6D4C41"),
-            Color.parseColor("#F4511E"),
-        )
     }
 }
