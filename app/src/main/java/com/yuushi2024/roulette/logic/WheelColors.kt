@@ -7,10 +7,10 @@ import kotlin.math.roundToInt
 /**
  * Builds the colours of the wheel.
  *
- * Every entry gets a base hue spaced by the golden angle, so even two or three
- * entries land on clearly different hues. The copies of one entry keep that hue
- * but step through lightness and saturation, which gives the finely divided
- * wheel a layered look instead of a flat repeat of the same few colours.
+ * Every entry gets a single vivid colour and all of its sectors share it, so the
+ * wheel still shows at a glance which wedges belong to the same entry. The hues
+ * are spaced by the golden angle, which keeps even two or three entries far
+ * apart on the colour circle instead of looking like a flat repeat.
  *
  * Android types are avoided on purpose so this can be unit tested on the JVM.
  */
@@ -19,25 +19,19 @@ object WheelColors {
     private const val GOLDEN_ANGLE = 137.508f
     private const val BASE_HUE = 352f
 
-    /** How far a copy's hue drifts from its entry's base hue, in degrees. */
-    private const val HUE_SPREAD = 16f
+    /** Saturation of the sector palette; high enough to look vivid. */
+    private const val SECTOR_SATURATION = 0.80f
+
+    /** Brightness of the sector palette, tuned for the best label contrast. */
+    private const val SECTOR_VALUE = 0.98f
 
     /** Base hue (degrees) of the entry at [sourceIndex]. */
     fun baseHue(sourceIndex: Int): Float =
         (((BASE_HUE + GOLDEN_ANGLE * sourceIndex) % 360f) + 360f) % 360f
 
-    /**
-     * Colour of one copy of an entry. [position] is the copy's order (0-based)
-     * and [total] how many copies that entry has on the wheel.
-     */
-    fun sectorColor(sourceIndex: Int, position: Int, total: Int): Int {
-        val hue = baseHue(sourceIndex)
-        val t = if (total <= 1) 0f else position.toFloat() / total
-        val shifted = (hue + (t - 0.5f) * HUE_SPREAD + 360f) % 360f
-        val saturation = if (position % 2 == 0) 0.86f else 0.64f
-        val value = 0.96f - 0.30f * t
-        return hsvToArgb(shifted, saturation, value)
-    }
+    /** Colour shared by every sector that belongs to the entry at [sourceIndex]. */
+    fun itemColor(sourceIndex: Int): Int =
+        hsvToArgb(baseHue(sourceIndex), SECTOR_SATURATION, SECTOR_VALUE)
 
     /**
      * Black or white, whichever has the higher contrast ratio against
@@ -45,8 +39,8 @@ object WheelColors {
      *
      * The ratio follows the WCAG definition, so the two candidates are compared
      * on real sRGB relative luminance rather than on a single brightness
-     * threshold. Very saturated mid-tones can still leave both candidates below
-     * 4.5:1; the better of the two is chosen in that case.
+     * threshold. Vivid mid-tones can leave both candidates below 4.5:1; the
+     * better of the two is chosen in that case.
      */
     fun labelColorFor(background: Int): Int {
         val backgroundLuminance = relativeLuminance(background)

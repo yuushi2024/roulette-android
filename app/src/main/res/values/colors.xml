@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_primary">#D32F2F</color>
-    <color name="brand_primary_dark">#9A0007</color>
-    <color name="brand_accent">#FFC107</color>
-    <color name="background">#F5F5F7</color>
+    <!-- Indigo primary with a warm amber accent: calm base, lively highlight. -->
+    <color name="brand_primary">#3F51B5</color>
+    <color name="brand_primary_dark">#303F9F</color>
+    <color name="brand_primary_container">#E8EAF6</color>
+    <color name="brand_on_primary_container">#1A237E</color>
+    <color name="brand_accent">#FF6F00</color>
+    <color name="brand_secondary">#00897B</color>
+    <color name="background">#F4F5FB</color>
     <color name="surface">#FFFFFF</color>
     <color name="on_surface">#1B1B1F</color>
-    <color name="icon_background">#1E88E5</color>
+    <color name="icon_background">#3F51B5</color>
 </resources>

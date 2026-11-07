@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.Roulette" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/brand_primary</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorSecondary">@color/brand_accent</item>
+        <item name="colorPrimary">#7986CB</item>
+        <item name="colorOnPrimary">#1A237E</item>
+        <item name="colorPrimaryContainer">#303F9F</item>
+        <item name="colorOnPrimaryContainer">#E8EAF6</item>
+        <item name="colorSecondary">#FFB300</item>
+        <item name="colorOnSecondary">#3E2723</item>
+        <item name="colorTertiary">#4DB6AC</item>
+        <item name="android:statusBarColor" tools:targetApi="l">#1A237E</item>
         <item name="android:windowBackground">#121212</item>
     </style>
 </resources>

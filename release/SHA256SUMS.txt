@@ -1,1 +1,1 @@
-20a3dd14cf0ba1842aaa32035e2527290f54e3878c14f4a07a4f4a053d4f0350  roulette-android-1.0.0.apk
+6487270bd2c3753cbb7e4130cd0f9c17a2abc8e5daba0c6aff61ac8dbee5973c  roulette-android-1.0.0.apk
