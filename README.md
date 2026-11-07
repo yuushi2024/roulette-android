@@ -52,10 +52,15 @@ export ANDROID_HOME=/path/to/android-sdk
 ./scripts/build-release.sh         # 署名済み APK を release/ に出力
 ```
 
-`scripts/build-release.sh` は、署名鍵がなければ初回に自動生成します。
-署名鍵 (`keystore/`) は `.gitignore` 済みで、リポジトリには含まれません。
-鍵のパスワードなどは環境変数 `ROULETTE_KEYSTORE` / `ROULETTE_STORE_PASSWORD` /
-`ROULETTE_KEY_ALIAS` / `ROULETTE_KEY_PASSWORD` で上書きできます。
+`scripts/build-release.sh` は、署名鍵がなければ初回にランダムなパスワードで自動生成し、
+そのパスワードを `keystore/keystore.properties` に書き出します。鍵 (`keystore/`) は
+`.gitignore` 済みで、リポジトリには含まれません。**パスワードを失うと鍵を使い回せない**
+ため、`keystore.properties` は安全な場所に保管してください。
+
+パスワードは環境変数 `ROULETTE_STORE_PASSWORD` / `ROULETTE_KEY_PASSWORD`、鍵の場所と
+別名は `ROULETTE_KEYSTORE` / `ROULETTE_KEY_ALIAS` でも指定できます。パスワード未設定で
+鍵だけ存在する場合、Gradle は**署名なし**の APK を生成します (固定パスワードへの
+フォールバックはしません)。
 
 ## 構成
 

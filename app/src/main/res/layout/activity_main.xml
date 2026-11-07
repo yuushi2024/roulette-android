@@ -36,7 +36,7 @@
         android:paddingVertical="10dp"
         android:gravity="center"
         android:text="@string/result_placeholder"
-        android:textColor="@color/on_surface"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/rouletteView"
@@ -73,14 +73,14 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/input_label"
-            android:textColor="@color/on_surface"
+            android:textColor="?attr/colorOnSurface"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/sectorCountText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#757575"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp" />
 
         <com.google.android.material.button.MaterialButton

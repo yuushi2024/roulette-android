@@ -11,7 +11,7 @@ captures/
 .externalNativeBuild/
 .cxx/
 
-# Signing material: never commit private keys
+# Signing material: never commit private keys or their passwords
 keystore/
 *.jks
 *.keystore

@@ -123,7 +123,6 @@ class MainActivity : AppCompatActivity() {
                 entriesInput.setText("")
                 restoring = false
                 viewModel.clear()
-                rotation = 0f
                 rouletteView.setSectors(emptyList())
                 Toast.makeText(this, R.string.cleared, Toast.LENGTH_SHORT).show()
             }

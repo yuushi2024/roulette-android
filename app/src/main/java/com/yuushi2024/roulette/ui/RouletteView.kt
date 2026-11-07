@@ -94,7 +94,16 @@ class RouletteView @JvmOverloads constructor(
                 invalidate()
             }
             addListener(object : AnimatorListenerAdapter() {
+                private var canceled = false
+
+                override fun onAnimationCancel(animation: Animator) {
+                    canceled = true
+                }
+
                 override fun onAnimationEnd(animation: Animator) {
+                    // onAnimationEnd also fires after cancel(); only report a
+                    // winner for a spin that actually reached the target.
+                    if (canceled) return
                     rotationDegrees = targetRotation
                     invalidate()
                     spinListener?.invoke(

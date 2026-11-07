@@ -16,27 +16,36 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            val storeFilePath = System.getenv("ROULETTE_KEYSTORE") ?: "${rootDir}/keystore/release.jks"
-            storeFile = file(storeFilePath)
-            storePassword = System.getenv("ROULETTE_STORE_PASSWORD") ?: "roulette2024"
-            keyAlias = System.getenv("ROULETTE_KEY_ALIAS") ?: "roulette"
-            keyPassword = System.getenv("ROULETTE_KEY_PASSWORD") ?: "roulette2024"
-        }
-    }
-
-    // The signing key is not committed, so a fresh clone can still build (unsigned)
-    // until scripts/build-release.sh creates one.
-    val releaseKeystore = file(
+    // Release signing is opt-in. It needs the keystore plus the passwords from the
+    // environment. Without them the release APK is built unsigned rather than falling
+    // back to a hard-coded key, which would let anyone sign a matching update.
+    val releaseKeystoreFile = file(
         System.getenv("ROULETTE_KEYSTORE") ?: "${rootDir}/keystore/release.jks",
     )
+    val releaseStorePassword = System.getenv("ROULETTE_STORE_PASSWORD")
+    val releaseKeyAlias = System.getenv("ROULETTE_KEY_ALIAS")
+    val releaseKeyPassword = System.getenv("ROULETTE_KEY_PASSWORD")
+    val hasReleaseSigning = releaseKeystoreFile.exists() &&
+        !releaseStorePassword.isNullOrEmpty() &&
+        !releaseKeyAlias.isNullOrEmpty() &&
+        !releaseKeyPassword.isNullOrEmpty()
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseKeystoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            if (releaseKeystore.exists()) {
+            if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }
             proguardFiles(
