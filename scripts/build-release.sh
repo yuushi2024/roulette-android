@@ -68,10 +68,12 @@ PROPERTIES
   echo "Wrote signing passwords to $PROPERTIES_PATH"
   export ROULETTE_STORE_PASSWORD="$STORE_PASSWORD"
   export ROULETTE_KEY_PASSWORD="$KEY_PASSWORD"
-elif [[ -z "${ROULETTE_STORE_PASSWORD:-}" ]]; then
-  export ROULETTE_STORE_PASSWORD="$(read_property storePassword || true)"
-  export ROULETTE_KEY_ALIAS="$(read_property keyAlias || echo "$KEY_ALIAS")"
-  export ROULETTE_KEY_PASSWORD="$(read_property keyPassword || true)"
+else
+  # Fall back to the stored values per field, so an existing key can be signed
+  # with only some of the variables set in the environment.
+  export ROULETTE_STORE_PASSWORD="${ROULETTE_STORE_PASSWORD:-$(read_property storePassword || true)}"
+  export ROULETTE_KEY_ALIAS="${ROULETTE_KEY_ALIAS:-$(read_property keyAlias || echo "$KEY_ALIAS")}"
+  export ROULETTE_KEY_PASSWORD="${ROULETTE_KEY_PASSWORD:-$(read_property keyPassword || true)}"
 fi
 
 if [[ -z "${ROULETTE_STORE_PASSWORD:-}" || -z "${ROULETTE_KEY_PASSWORD:-}" ]]; then
