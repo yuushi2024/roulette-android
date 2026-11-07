@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing material: never commit private keys
+keystore/
+*.jks
+*.keystore
+
+# OS / logs
+.DS_Store
+*.log
+
+# Agent scratch space
+.agent_tmp/
+.openhands/
