@@ -14,6 +14,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.yuushi2024.roulette.data.PreferencesStore
 import com.yuushi2024.roulette.logic.SpinMath
+import com.yuushi2024.roulette.logic.TextEditing
 import com.yuushi2024.roulette.logic.WheelFactory
 import com.yuushi2024.roulette.ui.RouletteView
 import com.yuushi2024.roulette.ui.RouletteViewModel
@@ -28,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sectorCountText: TextView
     private lateinit var spinButton: MaterialButton
     private lateinit var clearButton: MaterialButton
+    private lateinit var addLineButton: MaterialButton
 
     private var rotation = 0f
     private var restoring = false
@@ -43,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         sectorCountText = findViewById(R.id.sectorCountText)
         spinButton = findViewById(R.id.spinButton)
         clearButton = findViewById(R.id.clearButton)
+        addLineButton = findViewById(R.id.addLineButton)
 
         val savedText = if (savedInstanceState != null) {
             savedInstanceState.getString(STATE_TEXT) ?: PreferencesStore(this).loadEntriesText()
@@ -58,14 +61,14 @@ class MainActivity : AppCompatActivity() {
 
         // TextInputEditText turns the Enter key into an IME action while it is
         // showing a hint, which blocks newlines even with textMultiLine set.
-        // Restore the multi-line input type explicitly so Enter always inserts
-        // a line break.
+        // Restore the multi-line input type and clear the IME action so Enter
+        // always inserts a line break. IME_FLAG_NO_ENTER_ACTION is deliberately
+        // not set: on Gboard it turns Enter into a "done" action instead.
         entriesInput.inputType =
             InputType.TYPE_CLASS_TEXT or
             InputType.TYPE_TEXT_FLAG_MULTI_LINE or
             InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-        entriesInput.imeOptions =
-            EditorInfo.IME_ACTION_NONE or EditorInfo.IME_FLAG_NO_ENTER_ACTION
+        entriesInput.imeOptions = EditorInfo.IME_ACTION_NONE
 
         entriesInput.addTextChangedListener(object : TextWatcher {
             /** No-op: the wheel is rebuilt in [afterTextChanged] instead. */
@@ -86,6 +89,7 @@ class MainActivity : AppCompatActivity() {
 
         spinButton.setOnClickListener { startSpin() }
         clearButton.setOnClickListener { confirmClear() }
+        addLineButton.setOnClickListener { addLine() }
 
         viewModel.sectors.observe(this) { sectors ->
             rouletteView.setSectors(sectors)
@@ -132,6 +136,22 @@ class MainActivity : AppCompatActivity() {
     private fun setSpinning(spinning: Boolean) {
         spinButton.isEnabled = !spinning && !viewModel.sectors.value.isNullOrEmpty()
         spinButton.text = if (spinning) getString(R.string.spinning) else getString(R.string.spin)
+    }
+
+    /**
+     * Inserts a line break at the caret, so a new entry can be started without
+     * relying on the soft keyboard's Enter key.
+     */
+    private fun addLine() {
+        val text = entriesInput.text?.toString().orEmpty()
+        val start = entriesInput.selectionStart
+        val end = entriesInput.selectionEnd
+        val insertion = TextEditing.insertLineBreak(text, start, end)
+        restoring = true
+        entriesInput.setText(insertion.text)
+        entriesInput.setSelection(insertion.cursor)
+        restoring = false
+        viewModel.rebuild(insertion.text)
     }
 
     /** Asks for confirmation, then clears the input and the wheel. */

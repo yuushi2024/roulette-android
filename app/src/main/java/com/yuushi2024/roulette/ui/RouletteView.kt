@@ -38,7 +38,7 @@ class RouletteView @JvmOverloads constructor(
     private val sectorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        color = Color.argb(90, 255, 255, 255)
+        color = Color.argb(110, 255, 255, 255)
         strokeWidth = 2f
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -51,12 +51,17 @@ class RouletteView @JvmOverloads constructor(
     }
     private val hubRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        color = Color.parseColor("#FFC107")
+        color = Color.parseColor(PRIMARY)
         strokeWidth = 8f
     }
     private val pointerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#D32F2F")
+        color = Color.parseColor(POINTER)
+    }
+    private val pointerOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.WHITE
+        strokeWidth = 3f
     }
 
     private val oval = RectF()
@@ -188,19 +193,18 @@ class RouletteView @JvmOverloads constructor(
         pointerPath.lineTo(cx + halfWidth, cy - radius - radius * 0.02f)
         pointerPath.close()
         canvas.drawPath(pointerPath, pointerPaint)
+        canvas.drawPath(pointerPath, pointerOutlinePaint)
     }
 
-    /** Assigns a colour to every sector, shading the copies of one entry. */
-    private fun buildColors(items: List<RouletteSector>): IntArray {
-        // Copies of one entry share a hue; their order among the copies sets how
-        // light or dark that copy is, so the wheel shows a smooth gradient per
-        // entry rather than a single flat colour.
-        val totals = IntArray((items.maxOfOrNull { it.sourceIndex } ?: 0) + 1)
-        items.forEach { totals[it.sourceIndex]++ }
-        val seen = IntArray(totals.size)
-        return IntArray(items.size) { index ->
-            val source = items[index].sourceIndex
-            WheelColors.sectorColor(source, seen[source]++, totals[source])
-        }
+    /** Assigns a colour to every sector; all copies of one entry share it. */
+    private fun buildColors(items: List<RouletteSector>): IntArray =
+        IntArray(items.size) { index -> WheelColors.itemColor(items[index].sourceIndex) }
+
+    private companion object {
+        /** Must match the primary colour in colors.xml. */
+        const val PRIMARY = "#3F51B5"
+
+        /** Must match the accent colour in colors.xml. */
+        const val POINTER = "#FF6F00"
     }
 }

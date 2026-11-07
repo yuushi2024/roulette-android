@@ -3,7 +3,11 @@
     <style name="Theme.Roulette" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand_primary</item>
         <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">@color/brand_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/brand_on_primary_container</item>
         <item name="colorSecondary">@color/brand_accent</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorTertiary">@color/brand_secondary</item>
         <item name="android:statusBarColor" tools:targetApi="l">@color/brand_primary_dark</item>
         <item name="android:windowBackground">@color/background</item>
     </style>

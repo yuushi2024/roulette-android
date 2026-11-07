@@ -18,16 +18,27 @@ class WheelColorsTest {
     }
 
     @Test
-    fun `every colour is fully opaque`() {
-        for (source in 0 until 12) {
-            for (position in 0 until 12) {
-                assertEquals(0xFF, alpha(WheelColors.sectorColor(source, position, 12)))
-            }
+    fun `every item colour is fully opaque`() {
+        for (source in 0 until 20) {
+            assertEquals(0xFF, alpha(WheelColors.itemColor(source)))
         }
     }
 
     @Test
-    fun `neighbouring entries get clearly different hues`() {
+    fun `an item keeps one colour whatever its sectors do`() {
+        // The user asked for one colour per entry, not a gradient per copy.
+        val colour = WheelColors.itemColor(3)
+        assertEquals(colour, WheelColors.itemColor(3))
+    }
+
+    @Test
+    fun `each item gets its own colour`() {
+        val colours = (0 until 12).map { WheelColors.itemColor(it) }
+        assertEquals("items should not share a colour", 12, colours.toSet().size)
+    }
+
+    @Test
+    fun `neighbouring items get clearly different hues`() {
         // Two or three entries are the case that used to look monotonous, so the
         // first few base hues must be far apart.
         for (source in 0 until 5) {
@@ -50,55 +61,9 @@ class WheelColorsTest {
     }
 
     @Test
-    fun `copies of one entry are shaded differently`() {
-        val total = 8
-        val colors = (0 until total).map { WheelColors.sectorColor(1, it, total) }
-        assertEquals("copies should be distinct", total, colors.toSet().size)
-    }
-
-    @Test
-    fun `copies keep the hue of their entry`() {
-        // Lightness may vary, but the hue must not drift far from the base.
-        val base = WheelColors.baseHue(0)
-        for (position in 0 until 10) {
-            val color = WheelColors.sectorColor(0, position, 10)
-            val gap = hueDistance(hueOf(color), base)
-            assertTrue("hue drifted from $base to ${hueOf(color)}", gap < 25f)
-        }
-    }
-
-    /** Hue of an ARGB colour in degrees, computed without the Android framework. */
-    private fun hueOf(color: Int): Float {
-        val r = ((color shr 16) and 0xFF) / 255f
-        val g = ((color shr 8) and 0xFF) / 255f
-        val b = (color and 0xFF) / 255f
-        val max = maxOf(r, g, b)
-        val min = minOf(r, g, b)
-        val delta = max - min
-        if (delta == 0f) return 0f
-        val hue = when (max) {
-            r -> 60f * (((g - b) / delta) % 6f)
-            g -> 60f * (((b - r) / delta) + 2f)
-            else -> 60f * (((r - g) / delta) + 4f)
-        }
-        return (hue + 360f) % 360f
-    }
-
-    private fun hueDistance(a: Float, b: Float): Float {
-        val diff = kotlin.math.abs(a - b) % 360f
-        return minOf(diff, 360f - diff)
-    }
-
-    @Test
-    fun `three entries produce at least three distinct sector colours`() {
-        val colors = (0 until 3).map { WheelColors.sectorColor(it, 0, 4) }
-        assertEquals(3, colors.toSet().size)
-    }
-
-    @Test
-    fun `single copy still returns a usable colour`() {
-        val color = WheelColors.sectorColor(0, 0, 1)
-        assertEquals(0xFF, alpha(color))
+    fun `three items produce three distinct colours`() {
+        val colours = (0 until 3).map { WheelColors.itemColor(it) }
+        assertEquals(3, colours.toSet().size)
     }
 
     @Test
@@ -115,50 +80,46 @@ class WheelColorsTest {
         // #F522CC even though dark text contrasts better there.
         assertEquals(WheelColors.DARK_TEXT, WheelColors.labelColorFor(0xFFF522CC.toInt()))
 
-        for (source in 0 until 12) {
-            for (position in 0 until 6) {
-                val background = WheelColors.sectorColor(source, position, 6)
-                val backgroundLuminance = WheelColors.relativeLuminance(background)
-                val dark = WheelColors.contrastRatio(
-                    backgroundLuminance,
-                    WheelColors.relativeLuminance(WheelColors.DARK_TEXT),
-                )
-                val light = WheelColors.contrastRatio(
-                    backgroundLuminance,
-                    WheelColors.relativeLuminance(WheelColors.LIGHT_TEXT),
-                )
-                val chosen = if (WheelColors.labelColorFor(background) == WheelColors.DARK_TEXT) {
-                    dark
-                } else {
-                    light
-                }
-                assertTrue(
-                    "label for $background contrasts $chosen but the other is better",
-                    chosen >= maxOf(dark, light),
-                )
+        for (source in 0 until 20) {
+            val background = WheelColors.itemColor(source)
+            val backgroundLuminance = WheelColors.relativeLuminance(background)
+            val dark = WheelColors.contrastRatio(
+                backgroundLuminance,
+                WheelColors.relativeLuminance(WheelColors.DARK_TEXT),
+            )
+            val light = WheelColors.contrastRatio(
+                backgroundLuminance,
+                WheelColors.relativeLuminance(WheelColors.LIGHT_TEXT),
+            )
+            val chosen = if (WheelColors.labelColorFor(background) == WheelColors.DARK_TEXT) {
+                dark
+            } else {
+                light
             }
+            assertTrue(
+                "label for $background contrasts $chosen but the other is better",
+                chosen >= maxOf(dark, light),
+            )
         }
     }
 
     @Test
-    fun `generated sector colours stay legible`() {
-        // The palette is deliberately vivid, so a few saturated mid-tones
-        // cannot reach WCAG AA (4.5:1) with either candidate. The generator
-        // picks the better candidate, which keeps every colour in this palette
-        // at 4.1:1 or above; assert that floor so a regression is caught.
-        for (source in 0 until 12) {
-            for (position in 0 until 6) {
-                val background = WheelColors.sectorColor(source, position, 6)
-                val label = WheelColors.labelColorFor(background)
-                val ratio = WheelColors.contrastRatio(
-                    WheelColors.relativeLuminance(background),
-                    WheelColors.relativeLuminance(label),
-                )
-                assertTrue(
-                    "label on $background only contrasts $ratio",
-                    ratio >= 4.1,
-                )
-            }
+    fun `generated item colours stay legible`() {
+        // The palette is deliberately vivid, so a few saturated mid-tones cannot
+        // reach WCAG AA (4.5:1) with either candidate. Picking the better
+        // candidate keeps every colour in this palette at 4.4:1 or above; assert
+        // that floor so a regression in the palette is caught.
+        for (source in 0 until 20) {
+            val background = WheelColors.itemColor(source)
+            val label = WheelColors.labelColorFor(background)
+            val ratio = WheelColors.contrastRatio(
+                WheelColors.relativeLuminance(background),
+                WheelColors.relativeLuminance(label),
+            )
+            assertTrue(
+                "label on $background only contrasts $ratio",
+                ratio >= 4.4,
+            )
         }
     }
 }

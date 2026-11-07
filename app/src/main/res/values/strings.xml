@@ -7,6 +7,7 @@
     <string name="spin">スタート</string>
     <string name="spinning">回転中…</string>
     <string name="clear">クリア</string>
+    <string name="add_line">＋行追加</string>
     <string name="clear_confirm_title">入力をクリアしますか？</string>
     <string name="clear_confirm_message">入力した項目とルーレットの内容がすべて削除されます。</string>
     <string name="clear_confirm_ok">クリア</string>

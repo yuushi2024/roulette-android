@@ -80,15 +80,29 @@
             android:id="@+id/sectorCountText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addLineButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="@string/add_line"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_add_line"
+            app:iconGravity="textStart"
+            app:iconSize="16dp"
+            app:iconPadding="4dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/clearButton"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:minWidth="0dp"
             android:text="@string/clear" />
     </LinearLayout>
@@ -110,7 +124,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="top|start"
-            android:imeOptions="actionNone|flagNoEnterAction"
+            android:imeOptions="actionNone"
             android:inputType="textMultiLine|textCapSentences"
             android:scrollbars="vertical"
             android:singleLine="false" />
