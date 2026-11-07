@@ -52,8 +52,9 @@ export ANDROID_HOME=/path/to/android-sdk
 ./scripts/build-release.sh         # 署名済み APK を release/ に出力
 ```
 
-`scripts/build-release.sh` は、署名鍵がなければ初回にランダムなパスワードで自動生成し、
-そのパスワードを `keystore/keystore.properties` に書き出します。鍵 (`keystore/`) は
+`scripts/build-release.sh` は、署名鍵がなければ初回に鍵を自動生成し、パスワードは
+環境変数の指定を優先、未指定ならランダムに生成して `keystore/keystore.properties` に
+書き出します。鍵 (`keystore/`) は
 `.gitignore` 済みで、リポジトリには含まれません。**パスワードを失うと鍵を使い回せない**
 ため、`keystore.properties` は安全な場所に保管してください。
 

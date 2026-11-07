@@ -31,8 +31,10 @@ random_password() {
 if [[ ! -f "$KEYSTORE_PATH" ]]; then
   echo "No keystore at $KEYSTORE_PATH, generating one"
   mkdir -p "$(dirname "$KEYSTORE_PATH")"
-  STORE_PASSWORD="$(random_password)"
-  KEY_PASSWORD="$STORE_PASSWORD"
+  # Use the caller's passwords when given, so the same environment can sign
+  # again later; only invent values that were not provided.
+  STORE_PASSWORD="${ROULETTE_STORE_PASSWORD:-$(random_password)}"
+  KEY_PASSWORD="${ROULETTE_KEY_PASSWORD:-$STORE_PASSWORD}"
   keytool -genkeypair -v \
     -keystore "$KEYSTORE_PATH" \
     -storepass "$STORE_PASSWORD" \

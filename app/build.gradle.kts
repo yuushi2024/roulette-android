@@ -19,8 +19,10 @@ android {
     // Release signing is opt-in. It needs the keystore plus the passwords from the
     // environment. Without them the release APK is built unsigned rather than falling
     // back to a hard-coded key, which would let anyone sign a matching update.
-    val releaseKeystoreFile = file(
-        System.getenv("ROULETTE_KEYSTORE") ?: "${rootDir}/keystore/release.jks",
+    // Resolved against the root project so a relative ROULETTE_KEYSTORE matches
+    // what scripts/build-release.sh looks at (it runs from the repo root).
+    val releaseKeystoreFile = rootProject.file(
+        System.getenv("ROULETTE_KEYSTORE") ?: "keystore/release.jks",
     )
     val releaseStorePassword = System.getenv("ROULETTE_STORE_PASSWORD")
     val releaseKeyAlias = System.getenv("ROULETTE_KEY_ALIAS")
