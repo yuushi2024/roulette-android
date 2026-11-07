@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private var rotation = 0f
     private var restoring = false
 
+    /** Wires the widgets, restores the saved input and rebuilds the wheel. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -67,8 +68,11 @@ class MainActivity : AppCompatActivity() {
             EditorInfo.IME_ACTION_NONE or EditorInfo.IME_FLAG_NO_ENTER_ACTION
 
         entriesInput.addTextChangedListener(object : TextWatcher {
+            /** No-op: the wheel is rebuilt in [afterTextChanged] instead. */
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            /** No-op: the wheel is rebuilt in [afterTextChanged] instead. */
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            /** Rebuilds the wheel whenever the user edits the input. */
             override fun afterTextChanged(s: Editable?) {
                 if (restoring) return
                 viewModel.rebuild(s?.toString().orEmpty())
@@ -100,11 +104,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Keeps the input across configuration changes. */
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_TEXT, entriesInput.text?.toString().orEmpty())
     }
 
+    /** Persists the input so it survives leaving the app. */
     override fun onPause() {
         super.onPause()
         viewModel.rebuild(entriesInput.text?.toString().orEmpty())

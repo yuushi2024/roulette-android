@@ -98,10 +98,12 @@ class RouletteView @JvmOverloads constructor(
             addListener(object : AnimatorListenerAdapter() {
                 private var canceled = false
 
+                /** Marks the run as canceled so the end listener stays quiet. */
                 override fun onAnimationCancel(animation: Animator) {
                     canceled = true
                 }
 
+                /** Reports the winning sector, unless the spin was canceled. */
                 override fun onAnimationEnd(animation: Animator) {
                     // onAnimationEnd also fires after cancel(); only report a
                     // winner for a spin that actually reached the target.
@@ -125,6 +127,7 @@ class RouletteView @JvmOverloads constructor(
         super.onDetachedFromWindow()
     }
 
+    /** Draws the wedges, labels, hub and pointer at the current rotation. */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (sectors.isEmpty()) return

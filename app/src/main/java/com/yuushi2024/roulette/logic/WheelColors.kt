@@ -70,6 +70,7 @@ object WheelColors {
         return 0.2126 * r + 0.7152 * g + 0.0722 * b
     }
 
+    /** sRGB to linear-light conversion used by [relativeLuminance]. */
     private fun linearize(channel: Int): Double {
         val c = channel / 255.0
         return if (c <= 0.04045) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
