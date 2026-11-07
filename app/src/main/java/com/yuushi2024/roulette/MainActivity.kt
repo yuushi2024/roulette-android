@@ -2,7 +2,9 @@ package com.yuushi2024.roulette
 
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
+import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -52,6 +54,17 @@ class MainActivity : AppCompatActivity() {
         entriesInput.setSelection(savedText.length)
         restoring = false
         viewModel.rebuild(savedText)
+
+        // TextInputEditText turns the Enter key into an IME action while it is
+        // showing a hint, which blocks newlines even with textMultiLine set.
+        // Restore the multi-line input type explicitly so Enter always inserts
+        // a line break.
+        entriesInput.inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        entriesInput.imeOptions =
+            EditorInfo.IME_ACTION_NONE or EditorInfo.IME_FLAG_NO_ENTER_ACTION
 
         entriesInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
