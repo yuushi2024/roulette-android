@@ -11,10 +11,13 @@ captures/
 .externalNativeBuild/
 .cxx/
 
-# Signing material: never commit private keys
+# Signing material: never commit private keys or their passwords
 keystore/
 *.jks
 *.keystore
+# The password file is written next to whatever ROULETTE_KEYSTORE points at,
+# so ignore it by name rather than only under keystore/.
+keystore.properties
 
 # OS / logs
 .DS_Store
