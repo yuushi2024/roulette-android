@@ -28,6 +28,19 @@ random_password() {
   LC_ALL=C od -An -N24 -tx1 /dev/urandom | tr -d ' \n'
 }
 
+# Reads a value from the properties file without sourcing it, so passwords may
+# contain spaces or shell metacharacters.
+read_property() {
+  local key="$1" line
+  [[ -f "$PROPERTIES_PATH" ]] || return 1
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    case "$line" in
+      "$key"=*) printf '%s' "${line#"$key"=}"; return 0 ;;
+    esac
+  done < "$PROPERTIES_PATH"
+  return 1
+}
+
 if [[ ! -f "$KEYSTORE_PATH" ]]; then
   echo "No keystore at $KEYSTORE_PATH, generating one"
   mkdir -p "$(dirname "$KEYSTORE_PATH")"
@@ -35,8 +48,11 @@ if [[ ! -f "$KEYSTORE_PATH" ]]; then
   # again later; only invent values that were not provided.
   STORE_PASSWORD="${ROULETTE_STORE_PASSWORD:-$(random_password)}"
   KEY_PASSWORD="${ROULETTE_KEY_PASSWORD:-$STORE_PASSWORD}"
+  # JKS honours a key password that differs from the store password; PKCS12
+  # (the JDK default) silently ignores -keypass in that case.
   keytool -genkeypair -v \
     -keystore "$KEYSTORE_PATH" \
+    -storetype JKS \
     -storepass "$STORE_PASSWORD" \
     -keypass "$KEY_PASSWORD" \
     -alias "$KEY_ALIAS" \
@@ -52,12 +68,10 @@ PROPERTIES
   echo "Wrote signing passwords to $PROPERTIES_PATH"
   export ROULETTE_STORE_PASSWORD="$STORE_PASSWORD"
   export ROULETTE_KEY_PASSWORD="$KEY_PASSWORD"
-elif [[ -z "${ROULETTE_STORE_PASSWORD:-}" && -f "$PROPERTIES_PATH" ]]; then
-  # shellcheck disable=SC1090
-  source "$PROPERTIES_PATH"
-  export ROULETTE_STORE_PASSWORD="$storePassword"
-  export ROULETTE_KEY_ALIAS="${keyAlias:-$KEY_ALIAS}"
-  export ROULETTE_KEY_PASSWORD="$keyPassword"
+elif [[ -z "${ROULETTE_STORE_PASSWORD:-}" ]]; then
+  export ROULETTE_STORE_PASSWORD="$(read_property storePassword || true)"
+  export ROULETTE_KEY_ALIAS="$(read_property keyAlias || echo "$KEY_ALIAS")"
+  export ROULETTE_KEY_PASSWORD="$(read_property keyPassword || true)"
 fi
 
 if [[ -z "${ROULETTE_STORE_PASSWORD:-}" || -z "${ROULETTE_KEY_PASSWORD:-}" ]]; then
