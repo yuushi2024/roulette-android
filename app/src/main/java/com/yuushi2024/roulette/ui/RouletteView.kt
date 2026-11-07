@@ -1,0 +1,202 @@
+package com.yuushi2024.roulette.ui
+
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Typeface
+import android.util.AttributeSet
+import android.view.View
+import android.view.animation.DecelerateInterpolator
+import com.yuushi2024.roulette.logic.RouletteSector
+import com.yuushi2024.roulette.logic.SpinMath
+import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.sin
+
+/**
+ * Draws the wheel and animates the spin.
+ *
+ * The view only knows how to render sectors and how far the wheel has turned; the
+ * decision of where it stops is taken by the caller, which passes the final angle.
+ */
+class RouletteView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0,
+) : View(context, attrs, defStyleAttr) {
+
+    private var sectors: List<RouletteSector> = emptyList()
+    private var colors: IntArray = IntArray(0)
+
+    private val sectorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.argb(90, 255, 255, 255)
+        strokeWidth = 2f
+    }
+    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val hubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.WHITE
+    }
+    private val hubRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#FFC107")
+        strokeWidth = 8f
+    }
+    private val pointerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#D32F2F")
+    }
+
+    private val oval = RectF()
+    private val pointerPath = Path()
+
+    private var rotationDegrees = 0f
+    private var animator: ValueAnimator? = null
+    private var spinListener: ((Int) -> Unit)? = null
+
+    /** Called with the winning sector index once the wheel comes to rest. */
+    fun setOnSpinEndListener(listener: (Int) -> Unit) {
+        spinListener = listener
+    }
+
+    fun setSectors(newSectors: List<RouletteSector>) {
+        sectors = newSectors
+        colors = buildColors(newSectors)
+        invalidate()
+    }
+
+    fun isSpinning(): Boolean = animator?.isRunning == true
+
+    /**
+     * Spins from the current angle to [targetRotation] (degrees, growing clockwise)
+     * and reports the resulting sector index when the animation ends.
+     */
+    fun spinTo(targetRotation: Float, durationMillis: Long) {
+        animator?.cancel()
+        val start = rotationDegrees
+        val animator = ValueAnimator.ofFloat(start, targetRotation).apply {
+            duration = durationMillis
+            interpolator = DecelerateInterpolator(1.8f)
+            addUpdateListener {
+                rotationDegrees = it.animatedValue as Float
+                invalidate()
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    rotationDegrees = targetRotation
+                    invalidate()
+                    spinListener?.invoke(
+                        SpinMath.winningSectorIndex(targetRotation, sectors.size),
+                    )
+                }
+            })
+        }
+        this.animator = animator
+        animator.start()
+    }
+
+    override fun onDetachedFromWindow() {
+        animator?.cancel()
+        animator = null
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        if (sectors.isEmpty()) return
+
+        val size = min(width, height).toFloat()
+        val cx = width / 2f
+        val cy = height / 2f
+        val radius = size / 2f - size * 0.06f
+        oval.set(cx - radius, cy - radius, cx + radius, cy + radius)
+
+        val textSize = (radius * 0.085f).coerceIn(18f, 42f)
+        labelPaint.textSize = textSize
+
+        sectors.forEachIndexed { index, sector ->
+            sectorPaint.color = colors[index]
+            val start = sector.startAngle + rotationDegrees
+            canvas.drawArc(oval, start, sector.sweepAngle, true, sectorPaint)
+            canvas.drawArc(oval, start, sector.sweepAngle, true, dividerPaint)
+        }
+
+        drawLabels(canvas, cx, cy, radius, textSize)
+        drawHub(canvas, cx, cy, radius)
+        drawPointer(canvas, cx, cy, radius)
+    }
+
+    private fun drawLabels(canvas: Canvas, cx: Float, cy: Float, radius: Float, textSize: Float) {
+        if (sectors.size > 40) return
+        val textRadius = radius * 0.66f
+        sectors.forEach { sector ->
+            val angle = Math.toRadians((sector.centerAngle + rotationDegrees).toDouble())
+            val x = cx + (textRadius * cos(angle)).toFloat()
+            val y = cy + (textRadius * sin(angle)).toFloat()
+            canvas.save()
+            canvas.rotate(sector.centerAngle + rotationDegrees + 90f, x, y)
+            canvas.drawText(sector.label, x, y + textSize / 3f, labelPaint)
+            canvas.restore()
+        }
+    }
+
+    private fun drawHub(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
+        val hubRadius = radius * 0.16f
+        canvas.drawCircle(cx, cy, hubRadius, hubPaint)
+        canvas.drawCircle(cx, cy, hubRadius, hubRingPaint)
+    }
+
+    private fun drawPointer(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
+        val tipLength = radius * 0.30f
+        val halfWidth = radius * 0.09f
+        pointerPath.reset()
+        pointerPath.moveTo(cx, cy - radius + tipLength)
+        pointerPath.lineTo(cx - halfWidth, cy - radius - radius * 0.02f)
+        pointerPath.lineTo(cx + halfWidth, cy - radius - radius * 0.02f)
+        pointerPath.close()
+        canvas.drawPath(pointerPath, pointerPaint)
+    }
+
+    private fun buildColors(items: List<RouletteSector>): IntArray {
+        val palette = PALETTE
+        val distinct = (items.maxOfOrNull { it.sourceIndex } ?: 0) + 1
+        val bySource = IntArray(distinct) { source ->
+            if (source < palette.size) palette[source] else fallbackColor(source)
+        }
+        return IntArray(items.size) { bySource[items[it].sourceIndex] }
+    }
+
+    private fun fallbackColor(index: Int): Int {
+        val hue = (index * 137.508f) % 360f
+        return Color.HSVToColor(floatArrayOf(hue, 0.65f, 0.85f))
+    }
+
+    private companion object {
+        val PALETTE = intArrayOf(
+            Color.parseColor("#E53935"),
+            Color.parseColor("#1E88E5"),
+            Color.parseColor("#43A047"),
+            Color.parseColor("#FB8C00"),
+            Color.parseColor("#8E24AA"),
+            Color.parseColor("#00ACC1"),
+            Color.parseColor("#FDD835"),
+            Color.parseColor("#D81B60"),
+            Color.parseColor("#3949AB"),
+            Color.parseColor("#00897B"),
+            Color.parseColor("#6D4C41"),
+            Color.parseColor("#F4511E"),
+        )
+    }
+}
