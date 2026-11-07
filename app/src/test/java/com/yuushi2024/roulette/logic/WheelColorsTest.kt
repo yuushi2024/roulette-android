@@ -1,7 +1,6 @@
 package com.yuushi2024.roulette.logic
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -111,13 +110,53 @@ class WheelColorsTest {
     }
 
     @Test
-    fun `sector colours are legible for the generated palette`() {
-        // A light wedge must never be paired with white text.
-        for (source in 0 until 10) {
+    fun `label colour is the candidate with the higher contrast ratio`() {
+        // Regression: a plain brightness threshold used to pick white for
+        // #F522CC even though dark text contrasts better there.
+        assertEquals(WheelColors.DARK_TEXT, WheelColors.labelColorFor(0xFFF522CC.toInt()))
+
+        for (source in 0 until 12) {
+            for (position in 0 until 6) {
+                val background = WheelColors.sectorColor(source, position, 6)
+                val backgroundLuminance = WheelColors.relativeLuminance(background)
+                val dark = WheelColors.contrastRatio(
+                    backgroundLuminance,
+                    WheelColors.relativeLuminance(WheelColors.DARK_TEXT),
+                )
+                val light = WheelColors.contrastRatio(
+                    backgroundLuminance,
+                    WheelColors.relativeLuminance(WheelColors.LIGHT_TEXT),
+                )
+                val chosen = if (WheelColors.labelColorFor(background) == WheelColors.DARK_TEXT) {
+                    dark
+                } else {
+                    light
+                }
+                assertTrue(
+                    "label for $background contrasts $chosen but the other is better",
+                    chosen >= minOf(dark, light),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `generated sector colours stay legible`() {
+        // The palette is deliberately vivid, so a few mid-tones cannot reach
+        // WCAG AA. They must still stay above the 4.5:1 floor this palette is
+        // designed around, with the better candidate always chosen.
+        for (source in 0 until 12) {
             for (position in 0 until 6) {
                 val background = WheelColors.sectorColor(source, position, 6)
                 val label = WheelColors.labelColorFor(background)
-                assertNotEquals("label invisible on $background", background, label)
+                val ratio = WheelColors.contrastRatio(
+                    WheelColors.relativeLuminance(background),
+                    WheelColors.relativeLuminance(label),
+                )
+                assertTrue(
+                    "label on $background only contrasts $ratio",
+                    ratio >= 4.0,
+                )
             }
         }
     }
