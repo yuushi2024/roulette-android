@@ -142,9 +142,10 @@ class WheelColorsTest {
 
     @Test
     fun `generated sector colours stay legible`() {
-        // The palette is deliberately vivid, so a few mid-tones cannot reach
-        // WCAG AA. They must still stay above the 4.5:1 floor this palette is
-        // designed around, with the better candidate always chosen.
+        // The palette is deliberately vivid, so a few saturated mid-tones
+        // cannot reach WCAG AA (4.5:1) with either candidate. The generator
+        // picks the better candidate, which keeps every colour in this palette
+        // at 4.1:1 or above; assert that floor so a regression is caught.
         for (source in 0 until 12) {
             for (position in 0 until 6) {
                 val background = WheelColors.sectorColor(source, position, 6)
@@ -155,7 +156,7 @@ class WheelColorsTest {
                 )
                 assertTrue(
                     "label on $background only contrasts $ratio",
-                    ratio >= 4.0,
+                    ratio >= 4.1,
                 )
             }
         }
