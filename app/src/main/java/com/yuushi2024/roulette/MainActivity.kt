@@ -3,25 +3,24 @@ package com.yuushi2024.roulette
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
-import android.view.inputmethod.EditorInfo
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputEditText
 import com.yuushi2024.roulette.data.PreferencesStore
 import com.yuushi2024.roulette.logic.SpinMath
 import com.yuushi2024.roulette.logic.TextEditing
 import com.yuushi2024.roulette.logic.WheelFactory
 import com.yuushi2024.roulette.logic.WheelLayout
+import com.yuushi2024.roulette.ui.MultilineInputEditText
 import com.yuushi2024.roulette.ui.RouletteView
 import com.yuushi2024.roulette.ui.RouletteViewModel
 
@@ -31,7 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var rootLayout: ConstraintLayout
     private lateinit var rouletteView: RouletteView
-    private lateinit var entriesInput: TextInputEditText
+    private lateinit var entriesInput: MultilineInputEditText
     private lateinit var resultText: TextView
     private lateinit var sectorCountText: TextView
     private lateinit var spinButton: MaterialButton
@@ -44,6 +43,10 @@ class MainActivity : AppCompatActivity() {
     /** Wires the widgets, restores the saved input and rebuilds the wheel. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Draw edge to edge so the IME insets are delivered to the root view even
+        // on Android 10 and older. The listener below then pads the layout by the
+        // keyboard height, which is what lifts the input box above the keyboard.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
 
         rootLayout = findViewById(R.id.rootLayout)
@@ -67,17 +70,6 @@ class MainActivity : AppCompatActivity() {
         restoring = false
         viewModel.rebuild(savedText)
 
-        // TextInputEditText turns the Enter key into an IME action while it is
-        // showing a hint, which blocks newlines even with textMultiLine set.
-        // Restore the multi-line input type and clear the IME action so Enter
-        // always inserts a line break. IME_FLAG_NO_ENTER_ACTION is deliberately
-        // not set: on Gboard it turns Enter into a "done" action instead.
-        entriesInput.inputType =
-            InputType.TYPE_CLASS_TEXT or
-            InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-        entriesInput.imeOptions = EditorInfo.IME_ACTION_NONE
-
         entriesInput.addTextChangedListener(object : TextWatcher {
             /** No-op: the wheel is rebuilt in [afterTextChanged] instead. */
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
@@ -95,15 +87,17 @@ class MainActivity : AppCompatActivity() {
             setSpinning(false)
         }
 
-        // Shrink the wheel while the soft keyboard is open, so the input box keeps
-        // a usable height instead of being squeezed to nothing.
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { _, insets ->
-            val imeVisible = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insets.isVisible(WindowInsetsCompat.Type.ime())
-            } else {
-                insets.systemWindowInsetBottom > 0
-            }
-            applyWheelHeight(imeVisible)
+        // Lift the content above the soft keyboard and hand the whole screen to
+        // the input box while it is open. Padding the root view is what actually
+        // moves the layout: only changing the wheel's height left the bottom of
+        // the layout behind the keyboard.
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val imeVisible = isImeVisible(insets, systemBars.bottom, imeBottom)
+            val bottom = WheelLayout.bottomInset(imeVisible, imeBottom, systemBars.bottom)
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, bottom)
+            setWheelAreaVisible(WheelLayout.showWheelArea(imeVisible))
             insets
         }
 
@@ -140,15 +134,26 @@ class MainActivity : AppCompatActivity() {
         viewModel.rebuild(entriesInput.text?.toString().orEmpty())
     }
 
-    /** Applies the wheel height that suits the current keyboard state. */
-    private fun applyWheelHeight(imeVisible: Boolean) {
-        val set = ConstraintSet()
-        set.clone(rootLayout)
-        set.constrainPercentHeight(
-            R.id.rouletteView,
-            WheelLayout.wheelHeightPercent(imeVisible),
-        )
-        set.applyTo(rootLayout)
+    /**
+     * Whether the soft keyboard is showing.
+     *
+     * API 30 and newer report this directly. Below that the keyboard is folded into
+     * the bottom inset while the system-bar inset keeps reporting the navigation bar,
+     * so an IME inset taller than that bar means the keyboard is open.
+     */
+    private fun isImeVisible(insets: WindowInsetsCompat, systemBarBottom: Int, imeBottom: Int): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            insets.isVisible(WindowInsetsCompat.Type.ime())
+        } else {
+            WheelLayout.imeVisibleFromInsets(imeBottom, systemBarBottom)
+        }
+
+    /** Hides the wheel, result and start button so the input box can take the screen. */
+    private fun setWheelAreaVisible(visible: Boolean) {
+        val state = if (visible) View.VISIBLE else View.GONE
+        rouletteView.visibility = state
+        resultText.visibility = state
+        spinButton.visibility = state
     }
 
     /** Starts a spin unless one is already running or the wheel is empty. */
