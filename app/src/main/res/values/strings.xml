@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">ルーレット</string>
     <string name="title">ルーレット</string>
-    <string name="input_hint">1行に1つずつ項目を入力</string>
+    <string name="input_hint">1行に1つずつ項目を入力（Enter または「＋行追加」で改行）</string>
     <string name="input_label">項目</string>
     <string name="spin">スタート</string>
     <string name="spinning">回転中…</string>

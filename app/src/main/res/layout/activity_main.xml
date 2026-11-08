@@ -122,12 +122,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <com.yuushi2024.roulette.ui.MultilineInputEditText
             android:id="@+id/entriesInput"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="top|start"
-            android:imeOptions="actionNone"
+            android:imeOptions="actionUnspecified"
             android:inputType="textMultiLine|textCapSentences"
             android:scrollbars="vertical"
             android:singleLine="false" />
